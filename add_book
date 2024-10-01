@@ -1,0 +1,119 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+class AddBookScreen extends StatefulWidget {
+  @override
+  _AddBookScreenState createState() => _AddBookScreenState();
+}
+
+class _AddBookScreenState extends State<AddBookScreen> {
+  final _formKey = GlobalKey<FormState>();
+  String? _bookName;
+  String? _authorName;
+  String? _category;
+  String? _yearOfPublication;
+  String? _isbn;
+
+  Future<void> _saveBook() async {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+
+      // Create book data to be sent to the server
+      Map<String, String> bookData = {
+        'title': _bookName!,
+        'author': _authorName!,
+        'category': _category ?? '',
+        'yearpubish': _yearOfPublication ?? '',
+        'isbn': _isbn ?? '',
+        'coverImage': ''
+      };
+
+      // Make POST request to save book
+      var response = await http.post(
+        Uri.parse('http://localhost:3000/books'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(bookData),
+      );
+
+      if (response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Book saved successfully!')),
+        );
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save book')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Add Book"),
+      ),
+      body: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            TextFormField(
+              decoration: InputDecoration(labelText: "Book name"),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter a book name';
+                }
+                return null;
+              },
+              onSaved: (value) {
+                _bookName = value;
+              },
+            ),
+            TextFormField(
+              decoration: InputDecoration(labelText: "Author name"),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter an author name';
+                }
+                return null;
+              },
+              onSaved: (value) {
+                _authorName = value;
+              },
+            ),
+            TextFormField(
+              decoration: InputDecoration(labelText: "Category"),
+              onSaved: (value) {
+                _category = value;
+              },
+            ),
+            TextFormField(
+              decoration: InputDecoration(labelText: "Year of publication"),
+              onSaved: (value) {
+                _yearOfPublication = value;
+              },
+            ),
+            TextFormField(
+              decoration: InputDecoration(labelText: "ISBN"),
+              onSaved: (value) {
+                _isbn = value;
+              },
+            ),
+            ElevatedButton(
+              child: Text("Save"),
+              onPressed: _saveBook,
+            ),
+            ElevatedButton(
+              child: Text("Cancel"),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
